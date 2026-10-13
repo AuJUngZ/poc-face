@@ -136,7 +136,7 @@ export function createFaceDemo(
   let generation = 0;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let disposed = false;
-  let inference: Promise<FaceObservation> | null = null;
+  let observationQueue: Promise<void> = Promise.resolve();
   const listeners = new Set<(value: DemoSnapshot) => void>();
 
   function update(changes: Partial<DemoSnapshot>): void {
@@ -168,16 +168,20 @@ export function createFaceDemo(
     });
   }
 
-  async function observe(target: HTMLVideoElement): Promise<FaceObservation> {
-    // Tensor inference cannot be cancelled, so a new session waits for the previous call.
-    if (inference) await inference.catch(() => undefined);
-    const pending = engine.observe(target);
-    inference = pending;
-    try {
-      return await pending;
-    } finally {
-      if (inference === pending) inference = null;
-    }
+  function observe(
+    target: HTMLVideoElement,
+    token: number,
+  ): Promise<FaceObservation | null> {
+    // Tensor inference cannot be cancelled, so sessions share one serial queue.
+    const pending = observationQueue.then(() => {
+      if (token !== generation || disposed) return null;
+      return engine.observe(target);
+    });
+    observationQueue = pending.then(
+      () => undefined,
+      () => undefined,
+    );
+    return pending;
   }
 
   function match(observation: FaceObservation): RecognitionResult {
@@ -207,8 +211,8 @@ export function createFaceDemo(
   ): Promise<void> {
     if (token !== generation || disposed) return;
     try {
-      const observation = await observe(target);
-      if (token !== generation || disposed) return;
+      const observation = await observe(target, token);
+      if (observation === null || token !== generation || disposed) return;
       update({ session: { kind: "recognizing", result: match(observation) } });
       timer = setTimeout(() => {
         void recognize(token, target);
@@ -331,8 +335,8 @@ export function createFaceDemo(
         session: { kind: "capturing-sample", sampleCount: samples.length },
       });
       try {
-        const observation = await observe(target);
-        if (token !== generation || disposed)
+        const observation = await observe(target, token);
+        if (observation === null || token !== generation || disposed)
           return { kind: "camera-failed", message: "การเก็บตัวอย่างถูกยกเลิก" };
         let outcome: CaptureOutcome;
         if (observation.kind !== "single-face") outcome = observation;
@@ -422,7 +426,7 @@ export function createFaceDemo(
       document.removeEventListener("visibilitychange", hide);
       window.removeEventListener("pagehide", pageHide);
       // Keep model tensors alive until an uncancellable inference or load finishes.
-      void Promise.allSettled([inference, engine.load()]).then(() =>
+      void Promise.allSettled([observationQueue, engine.load()]).then(() =>
         engine.dispose(),
       );
     },
