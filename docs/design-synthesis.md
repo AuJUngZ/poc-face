@@ -23,4 +23,4 @@ The independent cross-judge selected A. Candidate A keeps camera and enrollment 
 
 ## Verification
 
-No candidate code was used directly. The selected contract is in `.audit/face-poc-architecture.md`. The live implementation will be reviewed against its state and privacy boundaries.
+No candidate code was used directly. The implementation was reviewed against the selected state and privacy boundaries. `npm run build` succeeds and emits all six model assets. The local preview showed both tabs and reached the model-ready state; each model asset returned HTTP 200 from the same origin, and the browser console had no warnings or errors. Camera capture, saved enrollment, and a real recognition result were not exercised because camera permission was not granted during review.

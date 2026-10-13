@@ -47,12 +47,12 @@ The `predev` and `prebuild` scripts copy six model assets from the pinned packag
 
 ## Data and POC limits
 
-The app stores names, generated profile IDs, creation times, a model ID, and three 128-number descriptors per profile under `face-lab.profiles.v1`. It does not save camera images or videos. Profiles belong to the current browser and origin. They do not sync across devices or tabs.
+The app stores names, generated profile IDs, creation times, a model ID, and three 128-number descriptors per profile under `face-lab.profiles.v1`. It does not save camera images or videos. Profiles are stored in `localStorage` for this browser origin, so tabs on the same origin share the saved data. This POC does not sync edits between tabs; use one tab at a time or reload before editing after using another tab.
 
 LocalStorage is not encrypted. Scripts on the same origin can read the profiles. Clearing browser site data also removes them. The runtime loads scripts and models from its own origin and uses system fonts. It has no CDN, analytics, or remote model fallback.
 
 A match is a similarity result. This POC does not prove identity or detect liveness. A photo or replay can match. Recognition quality depends on the camera, lighting, face angle, and participants. The thresholds have not been calibrated against a representative dataset, and the interface does not show a confidence percentage.
 
-`@vladmandic/face-api` is pinned to `1.7.15`. Its upstream repository is archived. Its usage stays behind `src/face-engine.ts`; assess maintenance, model quality, and consent requirements before extending this POC into a product. The app uses TinyFaceDetector, the tiny 68-point landmark model, and the face recognition model.
+`@vladmandic/face-api` is pinned to `1.7.15`. Its [upstream repository](https://github.com/vladmandic/face-api) is archived. Its usage stays behind `src/face-engine.ts`; assess maintenance, model quality, and consent requirements before extending this POC into a product. The app uses TinyFaceDetector, the tiny 68-point landmark model, and the face recognition model.
 
 For the selected data types and module ownership, read [the architecture contract](docs/architecture.md).

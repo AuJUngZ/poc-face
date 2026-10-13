@@ -12,10 +12,12 @@ The user opens the static Vite app, enters a name in Register, starts the camera
 const demo = createFaceDemo();
 demo.subscribe(render);
 await demo.initialize();
-await demo.startCamera('register', video);
+await demo.setMode('register');
+await demo.startCamera(video);
 await demo.captureSample();
 await demo.saveProfile('Nong');
-await demo.startCamera('recognition', video);
+await demo.setMode('recognition');
+await demo.startCamera(video);
 demo.stop();
 await demo.removeProfile(profileId);
 await demo.resetProfiles();
@@ -135,7 +137,7 @@ IndexedDB would support larger profiles and transactional per-record edits. It e
 
 ## Implementation reconciliation
 
-No implementation deviations have been accepted yet. Update this section if package constraints change the descriptor shape, model file list, or user-visible outcomes.
+The implementation keeps the three-descriptor profile shape, tagged session state, and local-only storage boundary. It uses a serial observation queue: each queued request checks its session generation before invoking the face engine, and model tensors are disposed after the queue and model loading settle. Model files are copied from the pinned package into `public/models` and shipped with the static build.
 
 ## Open questions and risks
 
@@ -145,6 +147,8 @@ No implementation deviations have been accepted yet. Update this section if pack
 - Model thresholds have not been calibrated for the user's camera, lighting, or participant set. The UI must not show a percentage or claim universal accuracy.
 - Camera access works only after permission on localhost or HTTPS.
 
-## Next implementation step
+## Verification status
 
-Build the local model-copy script and the face-engine adapter, then connect the controller and two tabs to those browser-only contracts.
+- `npm run build` succeeds and includes the application assets and all six local model files.
+- The browser UI and model loading are verified on the local preview.
+- Camera capture and recognition were not exercised because camera permission was not granted during review. Matching thresholds also remain uncalibrated against a representative dataset.
